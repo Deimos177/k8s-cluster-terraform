@@ -1,8 +1,14 @@
-export DEBIAN_FRONTEND=noninteractive sudo apt upgrade -y
-sudo apt install net-tools -y
+export DEBIAN_FRONTEND=noninteractive sudo apt -y upgrade
+sudo apt update
+sudo apt install -y net-tools
 sudo netstat -tulpn | grep "6443\|2379\|2380\|10250\|10259\|10257"
-sudo ufw allow 10257 && sudo ufw allow 6443 && sudo ufw allow 10250 && sudo ufw allow 2379 && sudo ufw allow 2380 &&sudo ufw allow 10257
-sudo apt install systemd-timesyncd -y
+sudo ufw allow 10257/tcp
+sudo ufw allow 6443/tcp
+sudo ufw allow 10250/tcp
+sudo ufw allow 2379/tcp
+sudo ufw allow 2380/tcp
+sudo ufw allow 10257/tcp
+sudo apt install -y systemd-timesyncd
 sudo timedatectl set-ntp true
 sudo timedatectl status
 cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
@@ -22,15 +28,19 @@ sudo mkdir -p /etc/containerd
 sudo containerd config default | sudo tee /etc/containerd/config.toml
 sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
 sudo systemctl restart containerd
-sudo swapoff -a && sudo sed -i.bak -r 's/(.+ swap .+)/#\1/' /etc/fstab
+sudo swapoff -a
+sudo sed -i.bak -r 's/(.+ swap .+)/#\1/' /etc/fstab
 sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
-sudo apt-get update && sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 sudo kubeadm init --pod-network-cidr 192.168.0.0/16
-sleep 60
-mkdir -p $HOME/.kube && sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && sudo chown $(id -u):$(id -g) $HOME/.kube/config
+sleep 20
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/calico.yaml
 echo "alias k="kubectl"" >> /home/ubuntu/.bashrc
 echo "alias apply="kubectl apply -f"" >> /home/ubuntu/.bashrc

@@ -5,17 +5,17 @@ provider "aws" {
 
 resource "aws_instance" "control-plane" {
   ami                    = "ami-08721da16b7931382" #Replace these field with your AMI ID
-  instance_type          = "t3.medium" #Replace these field with your prefered instance_type
-  key_name               = "control-plane" #Replace these field with your private-key file
+  instance_type          = "t3.medium"             #Replace these field with your prefered instance_type
+  key_name               = "control-plane"         #Replace these field with your private-key file
   monitoring             = true
-  vpc_security_group_ids = ["sg-078c4155707cbd1f5"] #Replace these field with your security group ID
+  vpc_security_group_ids = ["sg-078c4155707cbd1f5"]   #Replace these field with your security group ID
   subnet_id              = "subnet-099e843146bf4e39e" #Replace these field with your Subnet ID
 
   tags = {
     Terraform   = "true"
     Environment = "study"
     Autor       = "Bruce Vieira"
-    node = "control-plane"
+    node        = "control-plane"
   }
 }
 
@@ -24,17 +24,17 @@ resource "aws_instance" "worker-1" {
   depends_on = [aws_instance.control-plane]
 
   ami                    = "ami-08721da16b7931382" #Replace these field with your AMI ID
-  instance_type          = "t3.medium" #Replace these field with your prefered instance_type
-  key_name               = "workers" #Replace these field with your private-key file
+  instance_type          = "t3.medium"             #Replace these field with your prefered instance_type
+  key_name               = "workers"               #Replace these field with your private-key file
   monitoring             = true
-  vpc_security_group_ids = ["sg-078c4155707cbd1f5"] #Replace these field with your security group ID
+  vpc_security_group_ids = ["sg-078c4155707cbd1f5"]   #Replace these field with your security group ID
   subnet_id              = "subnet-099e843146bf4e39e" #Replace these field with your Subnet ID
 
   tags = {
     Terraform   = "true"
     Environment = "study"
     Autor       = "Bruce Vieira"
-    node = "worker-1"
+    node        = "worker-1"
   }
 }
 
@@ -43,7 +43,7 @@ resource "aws_instance" "worker-1" {
 resource "time_sleep" "wait_instance" {
   depends_on = [aws_instance.control-plane, aws_instance.worker-1]
 
-  create_duration = "90s"
+  create_duration = "150s"
 }
 
 resource "null_resource" "initial_commands_control_plane" {
@@ -74,6 +74,8 @@ resource "null_resource" "run_commands_control_plane" {
 
   provisioner "remote-exec" {
     inline = [
+      "sudo chmod +x /home/ubuntu/control-plane.sh",
+      "sudo chown -R ubuntu:ubuntu /home/ubuntu/.ssh/workers.pem",
       "bash /home/ubuntu/control-plane.sh && touch /home/ubuntu/script_complete"
     ]
   }
@@ -82,6 +84,14 @@ resource "null_resource" "run_commands_control_plane" {
     inline = [
       "while [ ! -f /home/ubuntu/script_complete ]; do echo 'Command did not complete'; sleep 60; done",
       "echo 'Script execution completed.'"
+    ]
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "export JOIN_COMMAND=$(sudo kubeadm token create --print-join-command)",
+      "printf \"sudo %s\" \"$join\" >> /home/ubuntu/join.sh",
+      "scp -o StrictHostKeyChecking=accept-new -i /home/ubuntu/.ssh/workers.pem /home/ubuntu/join.sh ubuntu@${aws_instance.worker-1.public_dns}:/home/ubuntu/join.sh"
     ]
   }
 
@@ -118,6 +128,8 @@ resource "null_resource" "run_commands_worker" {
 
   provisioner "remote-exec" {
     inline = [
+      "sudo chmod +x /home/ubuntu/worker-node.sh",
+      "sudo chmod +x /home/ubuntu/join.sh",
       "bash /home/ubuntu/worker-node.sh && touch /home/ubuntu/script_complete"
     ]
   }
@@ -136,27 +148,26 @@ resource "null_resource" "run_commands_worker" {
   }
 }
 
-#join worker-node
+# join worker-node
 
-#This step isn't working, for while will stand commented until i discover the problem
+# This step isn't working, for while will stand commented until i discover the problem
 
-# resource "null_resource" "join_node" {
+resource "null_resource" "join_node" {
 
-#   depends_on = [null_resource.run_commands_worker]
+  depends_on = [null_resource.run_commands_worker]
 
 
-#   provisioner "remote-exec" {
-#     inline = [
-#       "echo \"Run join command to worker-1\"",
-#       "export JOIN_COMMAND=$(sudo kubeadm token create --print-join-command)",
-#       "ssh -o StrictHostKeyChecking=accept-new -i /home/ubuntu/.ssh/workers.pem ubuntu@${aws_instance.worker-1.public_dns} \"sudo bash -s\" <<< \"$JOIN_COMMAND\""
-#     ]
-#   }
+  provisioner "remote-exec" {
+    inline = [
+      "echo \"Run join command to worker-1\"",
+      "bash join.sh"
+    ]
+  }
 
-#   connection {
-#     user        = "ubuntu"
-#     private_key = file("../control-plane.pem")
-#     host        = aws_instance.control-plane.public_dns
+  connection {
+    user        = "ubuntu"
+    private_key = file("../control-plane.pem")
+    host        = aws_instance.control-plane.public_dns
 
-#   }
-# }
+  }
+}
