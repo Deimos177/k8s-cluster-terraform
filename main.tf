@@ -23,7 +23,7 @@ resource "aws_instance" "worker-1" {
 
   depends_on = [aws_instance.control-plane]
 
-  ami                    = "ami-08721da16b7931382" #Replace these field with your AMI ID
+  ami                    = "ami-02604e7a56907ba3a" #Replace these field with your AMI ID
   instance_type          = "t3.medium"             #Replace these field with your prefered instance_type
   key_name               = "workers"               #Replace these field with your private-key file
   monitoring             = true
@@ -51,13 +51,14 @@ resource "null_resource" "initial_commands_control_plane" {
   depends_on = [time_sleep.wait_instance]
 
   provisioner "file" {
-    source      = "./control-plane.sh"
-    destination = "/home/ubuntu/control-plane.sh"
-  }
-
-  provisioner "file" {
     source      = "../workers.pem" #Replace the source private key file with the path for your local private key file
     destination = "/home/ubuntu/.ssh/workers.pem"
+  }
+
+
+  provisioner "file" {
+    source = "./control-plane.sh"
+    destination = "/home/ubuntu/control-plane.sh"
   }
 
   connection {
@@ -90,7 +91,7 @@ resource "null_resource" "run_commands_control_plane" {
   provisioner "remote-exec" {
     inline = [
       "export JOIN_COMMAND=$(sudo kubeadm token create --print-join-command)",
-      "printf \"sudo %s\" \"$join\" >> /home/ubuntu/join.sh",
+      "printf \"sudo %s\" \"$JOIN_COMMAND\" >> /home/ubuntu/join.sh",
       "scp -o StrictHostKeyChecking=accept-new -i /home/ubuntu/.ssh/workers.pem /home/ubuntu/join.sh ubuntu@${aws_instance.worker-1.public_dns}:/home/ubuntu/join.sh"
     ]
   }
@@ -107,7 +108,7 @@ resource "null_resource" "run_commands_control_plane" {
 
 resource "null_resource" "initial_commands_worker" {
 
-  depends_on = [time_sleep.wait_instance, null_resource.run_commands_control_plane]
+  depends_on = [null_resource.run_commands_control_plane]
 
   provisioner "file" {
     source      = "./worker-node.sh"
