@@ -33,3 +33,4 @@ echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.
 sudo apt-get update
 sudo apt-get install -y kubelet kubeadm kubectl --allow-change-held-packages
 sudo apt-mark hold kubelet kubeadm kubectl
+/home/ubuntu/join.sh

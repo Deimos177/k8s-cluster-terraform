@@ -91,8 +91,9 @@ resource "null_resource" "run_commands_control_plane" {
   provisioner "remote-exec" {
     inline = [
       "export JOIN_COMMAND=$(sudo kubeadm token create --print-join-command)",
-      "printf \"sudo %s\" \"$JOIN_COMMAND\" >> /home/ubuntu/join.sh",
-      "scp -o StrictHostKeyChecking=accept-new -i /home/ubuntu/.ssh/workers.pem /home/ubuntu/join.sh ubuntu@${aws_instance.worker-1.public_dns}:/home/ubuntu/join.sh"
+      "printf \"sudo %s --v=5\" \"$JOIN_COMMAND\" >> /home/ubuntu/join.sh",
+      "echo join.sh",
+      "scp -o StrictHostKeyChecking=accept-new -i /home/ubuntu/.ssh/workers.pem /home/ubuntu/join.sh ubuntu@${aws_instance.worker-1.public_dns}:/home/ubuntu"
     ]
   }
 
@@ -146,29 +147,5 @@ resource "null_resource" "run_commands_worker" {
     user        = "ubuntu"
     private_key = file("../workers.pem") #Replace the source private key file with the path for your local private key file
     host        = aws_instance.worker-1.public_dns
-  }
-}
-
-# join worker-node
-
-# This step isn't working, for while will stand commented until i discover the problem
-
-resource "null_resource" "join_node" {
-
-  depends_on = [null_resource.run_commands_worker]
-
-
-  provisioner "remote-exec" {
-    inline = [
-      "echo \"Run join command to worker-1\"",
-      "bash join.sh"
-    ]
-  }
-
-  connection {
-    user        = "ubuntu"
-    private_key = file("../control-plane.pem")
-    host        = aws_instance.control-plane.public_dns
-
   }
 }
