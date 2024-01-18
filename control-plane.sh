@@ -42,11 +42,11 @@ mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.0/manifests/calico.yaml
-echo "alias k="kubectl"" >> /home/ubuntu/.bashrc
-echo "alias apply="kubectl apply -f"" >> /home/ubuntu/.bashrc
-echo "alias delete="kubectl delete"" >> /home/ubuntu/.bashrc
-export do="--dry-run=client -o yaml"
-export now="--force --grace-period 0"
+echo "alias k=\"kubectl\"" >> /home/ubuntu/.bashrc
+echo "alias apply=\"kubectl apply -f\"" >> /home/ubuntu/.bashrc
+echo "alias delete=\"kubectl delete\"" >> /home/ubuntu/.bashrc
+export do=\"--dry-run=client -o yaml\"
+export now=\"--force --grace-period 0\"
 sudo tee /home/ubuntu/.vimrc > /dev/null <<EOF
 set tabstop=2
 set expandtab

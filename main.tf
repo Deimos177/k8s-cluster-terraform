@@ -149,3 +149,28 @@ resource "null_resource" "run_commands_worker" {
     host        = aws_instance.worker-1.public_dns
   }
 }
+
+resource "time_sleep" "wait_worker" {
+  depends_on = [null_resource.run_commands_worker]
+
+  create_duration = "10s"
+}
+
+resource "null_resource" "intialize_nginx_ingress_controller" {
+
+  depends_on = [time_sleep.wait_worker]
+
+  provisioner "remote-exec" {
+    inline = [
+      "helm install nginx-ingress oci://ghcr.io/nginxinc/charts/nginx-ingress --version 1.1.2 -n nginx-ingress --create-namespace "
+    ]
+  }
+  
+
+  connection {
+    user        = "ubuntu"
+    private_key = file("../control-plane.pem") #Replace the source private key file with the path for your local private key file
+    host        = aws_instance.control-plane.public_dns
+
+  }
+}
