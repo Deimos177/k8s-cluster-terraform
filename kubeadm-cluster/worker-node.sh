@@ -1,12 +1,12 @@
-export DEBIAN_FRONTEND=noninteractive sudo apt -y upgrade
+# export DEBIAN_FRONTEND=noninteractive sudo apt -y upgrade
 sudo apt update
 sudo apt install -y net-tool
 sudo netstat -tulpn | grep "10250"
 sudo ufw allow 10250/tcp
 sudo ufw allow 30000:32767/tcp
-sudo apt install -y systemd-timesync
-sudo timedatectl set-ntp true
-sudo timedatectl status
+# sudo apt install -y systemd-timesync
+# sudo timedatectl set-ntp true
+# sudo timedatectl status
 cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
 overlay
 br_netfilter
