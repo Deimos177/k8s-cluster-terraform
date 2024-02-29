@@ -51,7 +51,7 @@ resource "null_resource" "initial_commands_control_plane" {
   depends_on = [time_sleep.wait_instance]
 
   provisioner "file" {
-    source      = "C:/Users/Deimos/.ssh/workers.pem"
+    source      = "./.ssh/workers.pem"
     destination = "/home/ubuntu/.ssh/workers.pem"
   }
 
@@ -63,7 +63,7 @@ resource "null_resource" "initial_commands_control_plane" {
 
   connection {
     user        = "ubuntu"
-    private_key = file("C:/Users/Deimos/.ssh/control-plane.pem")
+    private_key = file("./control-plane.pem")
     host        = aws_instance.control-plane.public_dns
 
   }
@@ -99,7 +99,7 @@ resource "null_resource" "run_commands_control_plane" {
 
   connection {
     user        = "ubuntu"
-    private_key = file("C:/Users/Deimos/.ssh/control-plane.pem")
+    private_key = file("./control-plane.pem")
     host        = aws_instance.control-plane.public_dns
 
   }
@@ -118,7 +118,7 @@ resource "null_resource" "initial_commands_worker" {
 
   connection {
     user        = "ubuntu"
-    private_key = file("C:/Users/Deimos/.ssh/workers.pem")
+    private_key = file("./workers.pem")
     host        = aws_instance.worker-1.public_dns
 
   }
@@ -145,7 +145,7 @@ resource "null_resource" "run_commands_worker" {
 
   connection {
     user        = "ubuntu"
-    private_key = file("C:/Users/Deimos/.ssh/workers.pem")
+    private_key = file("./workers.pem")
     host        = aws_instance.worker-1.public_dns
   }
 }
@@ -169,7 +169,7 @@ resource "null_resource" "intialize_nginx_ingress_controller" {
 
   connection {
     user        = "ubuntu"
-    private_key = file("C:/Users/Deimos/.ssh/control-plane.pem")
+    private_key = file("./control-plane.pem")
     host        = aws_instance.control-plane.public_dns
 
   }
