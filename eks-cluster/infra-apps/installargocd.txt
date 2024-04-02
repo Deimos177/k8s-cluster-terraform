@@ -1,0 +1,1 @@
+helm install argocd argo/argo-cd --set server.extraArgs='{--insecure}' --namespace argocd --create-namespace

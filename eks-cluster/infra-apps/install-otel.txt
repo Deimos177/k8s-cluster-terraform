@@ -1,0 +1,4 @@
+otel-collector: helm install otel-collector open-telemetry/opentelemetry-collector -f ./otel/collector-values.yaml
+otel-operator: helm install my-opentelemetry-operator open-telemetry/opentelemetry-operator \
+  --set admissionWebhooks.certManager.enabled=false \
+  --set admissionWebhooks.certManager.autoGenerateCert.enabled=true
